@@ -83,10 +83,13 @@ SELECT name,
 who signed up. Do not use the LIMIT clause for your solution. */
 
 /* Code to obtain answer */
-SELECT firstname,
-       surname,
-       MAX(joindate)
- FROM country_club.Members
+SELECT members.firstname,
+       members.surname,
+       members.joindate
+FROM country_club.Members members
+INNER JOIN(SELECT memid, MAX(joindate) joindate
+     FROM country_club.Members
+)mem2 ON members.memid = mem2.memid
  
  /* Answer: Guest Guest
 
@@ -122,7 +125,8 @@ SELECT facilities.name,
 FROM country_club.Bookings bookings
 JOIN country_club.Facilities facilities ON bookings.facid = facilities.facid
 JOIN country_club.Members members ON bookings.memid = members.memid
-WHERE facilities.membercost >30 OR facilities.guestcost>30 AND bookings.starttime LIKE '2012-09-14%'
+WHERE ((bookings.memid = 0 AND facilities.guestcost > 30) OR (bookings.memid
+<> 0 AND facilities.membercost > 30))
 ORDER BY cost DESC
 /* NOTE: GUEST GUEST denotes a guest in the fullname column */
 
@@ -146,12 +150,15 @@ ORDER BY cost DESC
 The output of facility name and total revenue, sorted by revenue. Remember
 that there's a different cost for guests and members! */
 
-/* Code to obtain answer/Answer */
-SELECT facilities.name,
-       CASE WHEN bookings.memid = 0 THEN facilities.guestcost*bookings.slots
-       ELSE facilities.membercost*bookings.slots END AS cost
-FROM country_club.Bookings bookings
-JOIN country_club.Facilities facilities ON bookings.facid = facilities.facid
-GROUP BY 2 DESC
+SELECT sub.name,
+       SUM(sub.cost) AS sum
+FROM(SELECT CASE WHEN bookings.memid = 0 THEN facilities.guestcost*bookings.slots
+            ELSE facilities.membercost*bookings.slots END as cost,
+            bookings.facid,
+            facilities.name AS name
+       FROM country_club.Bookings as bookings
+       JOIN country_club.Facilities facilities ON bookings.facid = facilities.facid) sub
+GROUP BY sub.name
+HAVING sum<1000
 
 
