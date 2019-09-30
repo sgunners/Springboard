@@ -85,7 +85,7 @@ who signed up. Do not use the LIMIT clause for your solution. */
 /* Code to obtain answer */
 SELECT members.firstname,
        members.surname,
-       members.joindate
+       mem2.joindate
 FROM country_club.Members members
 INNER JOIN(SELECT memid, MAX(joindate) joindate
      FROM country_club.Members
@@ -120,13 +120,13 @@ Order by descending cost, and do not use any subqueries. */
 SELECT facilities.name,
        concat(members.firstname, ' ', members.surname) AS fullname,
        bookings.starttime,
-       CASE WHEN bookings.memid = 0 THEN facilities.guestcost
-       ELSE facilities.membercost END as cost
+       CASE WHEN bookings.memid = 0 THEN facilities.guestcost*bookings.slots
+       ELSE facilities.membercost*bookings.slots END as cost
 FROM country_club.Bookings bookings
 JOIN country_club.Facilities facilities ON bookings.facid = facilities.facid
 JOIN country_club.Members members ON bookings.memid = members.memid
-WHERE ((bookings.memid = 0 AND facilities.guestcost > 30) OR (bookings.memid
-<> 0 AND facilities.membercost > 30))
+WHERE ((bookings.memid = 0 AND facilities.guestcost*bookings.slots > 30) OR (bookings.memid
+<> 0 AND facilities.membercost*bookings.slots > 30)) AND bookings.starttime LIKE '2012-09-14%'
 ORDER BY cost DESC
 /* NOTE: GUEST GUEST denotes a guest in the fullname column */
 
@@ -138,11 +138,11 @@ SELECT sub.*,
 FROM country_club.Members members
 JOIN (SELECT CASE WHEN bookings.memid = 0 THEN facilities.guestcost*bookings.slots
                   ELSE facilities.membercost*bookings.slots END as cost,
-                  bookings.memid,
+                  bookings.memid as memid,
                   facilities.name
       FROM country_club.Bookings bookings  
       JOIN country_club.Facilities facilities ON bookings.facid = facilities.facid
-      WHERE bookings.starttime LIKE '2012-09-14%') sub
+      WHERE bookings.starttime LIKE '2012-09-14%') sub ON sub.memid = members.memid
 WHERE cost>30
 ORDER BY cost DESC
 
